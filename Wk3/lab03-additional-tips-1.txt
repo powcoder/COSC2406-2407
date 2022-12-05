@@ -1,0 +1,132 @@
+https://powcoder.com
+代写代考加微信 powcoder
+Assignment Project Exam Help
+Add WeChat powcoder
+https://powcoder.com
+代写代考加微信 powcoder
+Assignment Project Exam Help
+Add WeChat powcoder
+Lab 3 - additional tips compiled by Reza Soltanpoor
+
+Record == Document
+Table  == Collection 
+----------------------
+
+https://docs.mongodb.com/manual/tutorial/install-mongodb-on-windows/
+https://docs.mongodb.com/manual/mongo/
+https://docs.mongodb.com/getting-started/shell/query/
+------------
+
+simple starting instructions:
+-----------------------------
+show dbs
+use $DB
+show collections
+------------
+
+ROBOMONGO or MongoDB Shell!
+---------------------------
+use dbsystems
+db.staff.insert({_id: "e16161", FirstName: "John", LastName: "Do", 
+    roles: [
+    { courseID: "COSC2406", position: "Lecturer", hours: 2} ,
+    { courseID: "COSC2407", position: "Lecturer", hours: 2}
+    ]})
+	
+use dbsystems
+db.student.insert({FirstName: "Fred", LastName: "Zhang", Age: 24, StudentNumber: "s1234"})
+db.student.insert({FirstName: "Kim", LastName: "Jones", Age: 23, StudentNumber: "s4567"})
+db.student.insert({FirstName: "Ann", LastName: "Ng", Age: 20, StudentNumber: "s6789"})
+==========
+db.$COLLECTION.find() == db["$COLLECTION"].find() == SELECT * FROM $TABLE // table == collection 
+db.$COLLECTION.find().pretty()
+db.$COLLECTION.findOne()
+
+some useful parameters inside the "find()" method:
+--------------------------------------------------
+{ <field1>: <value1>, <field2>: <value2>, ... }
+nested fields with DOT NOTATION access:
+{ <field1>: { <operator1>: <value1> } }
+
+db.student.find( {"FirstName" : "Kim"} )
+db.student.find( {"FirstName" : "Kim"} ).pretty()
+==========
+
+use dbsystems
+db.studentCourse.insert({Student: "s1234", Course: "COSC2406", Semester: 1})
+db.studentCourse.insert({Student: "s1234", Course: "COSC1127", Semester: 1})
+db.studentCourse.insert({Student: "s1234", Course: "COSC2110", Semester: 2})
+db.studentCourse.insert({Student: "s4567", Course: "COSC2406", Semester: 1})
+db.studentCourse.insert({Student: "s6789", Course: "COSC2406", Semester: 1})
+db.studentCourse.insert({Student: "s6789", Course: "COSC2110", Semester: 2})
+===========
+db.studentCourse.find( {"Course": "COSC2406" , "Semester": 1} ).pretty()
+-----------
+https://docs.mongodb.com/getting-started/shell/update/
+https://docs.mongodb.com/manual/reference/operator/update/
+https://docs.mongodb.com/manual/aggregation/
+https://docs.mongodb.com/manual/reference/sql-aggregation-comparison/
+----------------------------------------------------------------------
+
+---- combining two collections "student" and "studentCourse" using the "lookup" aggregate function ----
+db.student.aggregate([
+	{
+		$lookup: {
+			from: "studentCourse",
+			localField: "StudentNumber",
+			foreignField: "Student",
+			as: "courseInfo"
+		}
+	}
+]).pretty()
+
+----- using the "$out" param of the "aggregate" function ------
+db.student.aggregate([
+	{
+		$lookup: {
+			from: "studentCourse",
+			localField: "StudentNumber",
+			foreignField: "Student",
+			as: "info"
+		}
+	},
+	{
+		$out: "courseInfo"
+	}
+])
+db.courseInfo.find( {"info.Course" : "COSC2110"} )
+===========
+
+Performance Analysis:
+---------------------
+ops = [ 
+	{
+	 op: "findOne", 
+	 ns: "test.students", 
+	 query: {student_id: "s1234"}
+	} , 
+	{
+	 op: "findOne", 
+	 ns: "test.students", 
+	 query: {student_id: "s4567"}
+	},
+	{
+	 op: "findOne", 
+	 ns: "test.students", 
+	 query: {student_id: "s6789"}
+	}
+]
+
+-----
+
+for ( var x = 1; x <= 128; x *= 2) {
+    res = benchRun( {
+        parallel : x ,
+        seconds : 5 ,
+        ops : ops
+    } );
+    print( "threads: " + x + "\t queries/sec: " + res.query );
+}
+
+---- info on the benchRun ----
+https://github.com/mongodb/mongo/wiki/JavaScript-Benchmarking-Harness

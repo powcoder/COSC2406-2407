@@ -1,0 +1,152 @@
+https://powcoder.com
+代写代考加微信 powcoder
+Assignment Project Exam Help
+Add WeChat powcoder
+https://powcoder.com
+代写代考加微信 powcoder
+Assignment Project Exam Help
+Add WeChat powcoder
+***: Please note to "STOP" your AWS instances and not "TERMINATE" them! 
+
+*: for those who suffer from 'connection timed out' in PUTTY, please do the following:
+-go to "Connection" element on the "Category" tree in your PUTTY,
+-select "Seconds between keepalives (0 to turn off)" and put a number in seconds such as 10 or 300!
+Done! :-)
+
+---------------------------------------------------------------------------------------------------------------
+
+running 'ij' on derby
+==================
+java org.apache.derby.tools.ij
+
+creating a db
+===========
+connect 'jdbc:derby:MyDbTest;create=true';
+exit;
+
+connecting to the created db
+=========================
+connect 'jdbc:derby:MyDbTest';
+
+creating the 'student' table
+============================
+create table student(given_name varchar(50), family_name varchar(50), age int, student_number varchar(10));
+
+inserting data into the 'student' table
+=======================================
+insert into student values ('Fred', 'Zhang', 20, 's1234');
+insert into student values ('Kim', 'Jones', 21, 's4567');
+insert into student values ('Ann', 'Ng', 24, 's6789');
+select * from student;
+
+creating the 'student_course' table
+===================================
+create table student_course (student varchar(10), course varchar(20), semester int);
+
+inserting data into the 'student_course' table
+==============================================
+insert into student_course values ('s1234', 'COSC2406', 1);
+insert into student_course values ('s1234', 'COSC1127', 1);
+insert into student_course values ('s1234', 'COSC2110', 2);
+insert into student_course values ('s4567', 'COSC2406', 1);
+insert into student_course values ('s6789', 'COSC2406', 1);
+insert into student_course values ('s6789', 'COSC2110', 2);
+select * from student_course;
+
+retrieving the student names who are enrolled in the course 'COSC2110' in semester 2
+==========================================================================
+1:
+select given_name, family_name from student where student_number in (select student from student_course where course = 'COSC2110' and semester = 2);
+
+2:
+select s.given_name, s.family_name from student s, student_course sc where s.student_number = sc.student and sc.course = 'COSC2110' and sc.semester = 2;
+
+3:
+...
+
+
+performance
+------------------
+===========
+
+turn on 'runstatistics'
+==================
+CALL SYSCS_UTIL.SYSCS_SET_RUNTIMESTATISTICS(1);
+
+turn on 'timing information'
+========================
+CALL SYSCS_UTIL.SYSCS_SET_STATISTICS_TIMING(1);
+
+-- your queries (complex ones) go here...!
+
+runtime stat info
+==============
+VALUES SYSCS_UTIL.SYSCS_GET_RUNTIMESTATISTICS();
+
+turn off 'runstatistics'
+==================
+CALL SYSCS_UTIL.SYSCS_SET_RUNTIMESTATISTICS(0);
+
+
+---------------------------------------------------------------------------------
+
+working with XPLAIN
+------------------------------
+==================
+-- Turn on RUNTIMESTATISTICS for connection:
+CALL SYSCS_UTIL.SYSCS_SET_RUNTIMESTATISTICS(1);
+CALL SYSCS_UTIL.SYSCS_SET_STATISTICS_TIMING(1);
+-- Indicate that statistics information should be captured into
+-- database tables in the MYSCHEMA schema:
+CALL SYSCS_UTIL.SYSCS_SET_XPLAIN_SCHEMA('MYSCHEMA');
+-- Execute queries, step through result sets, perform application
+-- processing ...
+CALL SYSCS_UTIL.SYSCS_SET_RUNTIMESTATISTICS(0);
+
+
+--Retrieve the text of statements which were captured, in order by the time when the statistics were captured
+select stmt_text, xplain_time
+from myschema.sysxplain_statements
+order by xplain_time;
+
+--Retrieve the text of statements which were captured, showing the statements which took the longest time to execute first
+select s.stmt_text, st.execute_time
+from myschema.sysxplain_statements s,
+ myschema.sysxplain_statement_timings st
+where s.timing_id = st.timing_id
+order by st.execute_time desc
+;
+
+--Show the statements that were executed, together with the result sets that each statement required
+select st.stmt_text, rs.op_identifier
+from myschema.sysxplain_statements st
+join myschema.sysxplain_resultsets rs
+ on st.stmt_id = rs.stmt_id;
+--Find statements which resulted in an external sort being performed
+select s.stmt_text, s.stmt_id, rs.op_identifier, srt.no_input_rows
+from myschema.sysxplain_sort_props srt,
+ myschema.sysxplain_resultsets rs,
+ myschema.sysxplain_statements s
+where rs.stmt_id = s.stmt_id and
+ rs.sort_rs_id = srt.sort_rs_id and
+ srt.sort_type = 'EX';
+
+--Show statements which resulted in a sort, sorted by the number of rows which were sorted by that statement
+select s.stmt_text, s.stmt_id, rs.op_identifier, srt.no_input_rows
+from myschema.sysxplain_sort_props srt,
+ myschema.sysxplain_resultsets rs,
+ myschema.sysxplain_statements s
+where rs.stmt_id = s.stmt_id and
+ rs.sort_rs_id = srt.sort_rs_id
+order by srt.no_input_rows desc;
+
+--Find statements which resulted in a table scan of the COUNTRIES table, and display the number of pages and rows that were visited by each scan
+select st.stmt_text, sp.no_visited_pages, sp.no_visited_rows
+from myschema.sysxplain_scan_props sp,
+ myschema.sysxplain_resultsets rs,
+ myschema.sysxplain_statements st
+where st.stmt_id = rs.stmt_id and
+ rs.scan_rs_id = sp.scan_rs_id and
+ rs.op_identifier = 'TABLESCAN' and
+ sp.scan_object_name = 'COUNTRIES';
+
